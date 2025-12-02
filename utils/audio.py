@@ -73,10 +73,35 @@ class AudioStreamer:
                 def _gtts_generate():
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
                         gtts_path = tmp_file.name
+                    
+                    # Generate slow audio
                     tts = gTTS(text=clean_text, lang='en')
                     tts.save(gtts_path)
-                    with open(gtts_path, "rb") as f:
-                        gtts_data = f.read()
+                    
+                    # Speed up audio using pydub
+                    try:
+                        from pydub import AudioSegment
+                        audio = AudioSegment.from_mp3(gtts_path)
+                        # Speed up by 1.3x
+                        fast_audio = audio.speedup(playback_speed=1.2)
+                        
+                        # Export to buffer
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fast_tmp:
+                            fast_path = fast_tmp.name
+                            
+                        fast_audio.export(fast_path, format="mp3")
+                        
+                        with open(fast_path, "rb") as f:
+                            gtts_data = f.read()
+                            
+                        if os.path.exists(fast_path):
+                            os.remove(fast_path)
+                            
+                    except Exception as e_pydub:
+                        print(f"Pydub speedup failed: {e_pydub}. Using normal speed.")
+                        with open(gtts_path, "rb") as f:
+                            gtts_data = f.read()
+
                     if os.path.exists(gtts_path):
                         os.remove(gtts_path)
                     return gtts_data
