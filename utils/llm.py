@@ -41,29 +41,28 @@ User Question: {prompt}"""
                 # Use GenerativeModel API which exposes generate_content
                 model_obj = genai.GenerativeModel(self.model)
                 resp = model_obj.generate_content(contents=[{"parts": [{"text": effective_prompt}]}], stream=False)
-                # prefer convenience property
-                if getattr(resp, 'text', None):
-                    return resp.text
-                # parse candidates -> content -> parts
-                if getattr(resp, 'candidates', None):
+                
+                # Check for safety ratings or other blocks if text is not available
+                try:
+                    if resp.text:
+                        return resp.text
+                except ValueError:
+                    # This usually happens if the response was blocked by safety filters
+                    print(f"Response blocked. Safety ratings: {resp.prompt_feedback}")
+                    return "I cannot answer this question because it violates safety policies."
+                
+                # Fallback parsing for complex responses
+                if hasattr(resp, 'candidates') and resp.candidates:
                     c = resp.candidates[0]
-                    cont = getattr(c, 'content', None)
-                    if cont and getattr(cont, 'parts', None):
-                        parts = cont.parts
-                        if parts and getattr(parts[0], 'text', None):
-                            return parts[0].text
-                # fallback to dictionary or repr
-                try:
-                    return resp.to_dict()
-                except Exception:
-                    return str(resp)
+                    if hasattr(c, 'content') and c.content:
+                        if hasattr(c.content, 'parts') and c.content.parts:
+                            return c.content.parts[0].text
+                            
+                return "I could not generate a response. Please try again."
+
             except Exception as e:
-                # fallback for older SDKs or errors
-                try:
-                    resp = genai.generate_text(model=self.model, text=effective_prompt)
-                    return getattr(resp, 'text', str(resp))
-                except Exception as e2:
-                    return f'LLM call failed: {e} | {e2}'
+                print(f"LLM Generation Error: {e}")
+                return f"Error generating response: {str(e)}"
         return await loop.run_in_executor(None, _call)
 
     async def transcribe_bytes(self, audio_bytes: bytes) -> str:
