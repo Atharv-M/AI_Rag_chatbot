@@ -26,7 +26,15 @@ load_dotenv()
 # Initialize utils
 @st.cache_resource
 def get_llm():
-    return GeminiLLM(api_key=os.getenv("GEMINI_API_KEY"), model=os.getenv("GEMINI_MODEL"))
+    # Try getting from st.secrets first (for Streamlit Cloud), then os.getenv (for local)
+    api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY"))
+    model = st.secrets.get("GEMINI_MODEL", os.getenv("GEMINI_MODEL"))
+    
+    if not api_key:
+        st.error("GEMINI_API_KEY not found. Please set it in .env or Streamlit secrets.")
+        st.stop()
+        
+    return GeminiLLM(api_key=api_key, model=model)
 
 
 
