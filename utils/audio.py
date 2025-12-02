@@ -58,10 +58,13 @@ class AudioStreamer:
             
             with open(tmp_path, "rb") as f:
                 data = f.read()
-                
+            
+            print(f"TTS Success: Generated {len(data)} bytes")
             return data
         except Exception as e:
-            print(f"EdgeTTS generation error: {e}")
+            print(f"EdgeTTS generation error: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             # Return empty bytes on error instead of raising, to avoid crashing app
             return b""
         finally:
