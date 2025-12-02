@@ -3,6 +3,7 @@ import asyncio
 import tempfile
 import os
 import re
+from gtts import gTTS
 
 class AudioStreamer:
     def __init__(self, voice: str = "en-US-AriaNeural"):
@@ -36,7 +37,7 @@ class AudioStreamer:
     async def generate_audio(self, text: str) -> bytes:
         """
         Generates audio using edge-tts and returns bytes.
-        Uses a temporary file to ensure complete generation before reading.
+        Fallback to gTTS if edge-tts fails (e.g. 403 error on cloud).
         """
         if not text or not text.strip():
             return b""
@@ -46,27 +47,44 @@ class AudioStreamer:
         if not clean_text:
             return b""
             
-        communicate = edge_tts.Communicate(clean_text, self.voice)
-        
-        # Create a temporary file
-        # We close it immediately so edge-tts can open and write to it
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
-            tmp_path = tmp_file.name
-            
+        # Try Edge TTS first
         try:
+            communicate = edge_tts.Communicate(clean_text, self.voice)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
+                tmp_path = tmp_file.name
+            
             await communicate.save(tmp_path)
             
             with open(tmp_path, "rb") as f:
                 data = f.read()
             
-            print(f"TTS Success: Generated {len(data)} bytes")
-            return data
-        except Exception as e:
-            print(f"EdgeTTS generation error: {type(e).__name__}: {e}")
-            import traceback
-            traceback.print_exc()
-            # Return empty bytes on error instead of raising, to avoid crashing app
-            return b""
-        finally:
+            print(f"EdgeTTS Success: Generated {len(data)} bytes")
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
+            return data
+            
+        except Exception as e:
+            print(f"EdgeTTS failed: {e}. Switching to gTTS fallback...")
+            
+            # Fallback to gTTS
+            try:
+                # Run gTTS in a separate thread to avoid blocking asyncio loop
+                loop = asyncio.get_event_loop()
+                def _gtts_generate():
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_file:
+                        gtts_path = tmp_file.name
+                    tts = gTTS(text=clean_text, lang='en')
+                    tts.save(gtts_path)
+                    with open(gtts_path, "rb") as f:
+                        gtts_data = f.read()
+                    if os.path.exists(gtts_path):
+                        os.remove(gtts_path)
+                    return gtts_data
+                
+                data = await loop.run_in_executor(None, _gtts_generate)
+                print(f"gTTS Success: Generated {len(data)} bytes")
+                return data
+                
+            except Exception as e2:
+                print(f"gTTS fallback failed: {e2}")
+                return b""
