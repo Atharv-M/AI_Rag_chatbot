@@ -40,13 +40,10 @@ def get_llm():
 
 @st.cache_resource
 def get_rag_engine():
-    # No API key needed for local embeddings
     return RAGEngine(model_name="all-MiniLM-L6-v2")
 
 @st.cache_resource
 def get_stt_engine():
-    # Use Faster Whisper (local)
-    # Using 'tiny' for speed on typical machines, 'base' is better accuracy
     return STTEngine(model_size="tiny", device="cpu", compute_type="int8")
 
 llm = get_llm()
@@ -70,8 +67,6 @@ st.markdown("""
         justify-content: flex-end;
     }
     
-    /* Optional: Make audio input look more like a button if needed, 
-       but primarily this ensures text input and audio widget sit at same baseline */
     .stAudioInput {
         margin-top: 0px !important;
     }

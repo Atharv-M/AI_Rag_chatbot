@@ -14,22 +14,18 @@ class AudioStreamer:
         Removes markdown and other artifacts from text for better TTS.
         """
         # Remove bold/italic markers (**text**, *text*)
+        # Remove code blocks (`text`)
+        # Remove headers (### Header)
+        # Remove brackets/citations [Source: ...]
+        # Remove URLs
         text = re.sub(r'\*\*|__', '', text)
         text = re.sub(r'\*|_', '', text)
-        
-        # Remove code blocks (`text`)
         text = re.sub(r'`', '', text)
-        
-        # Remove headers (### Header)
         text = re.sub(r'#+', '', text)
-        
-        # Remove brackets/citations [Source: ...]
         text = re.sub(r'\[.*?\]', '', text)
-        
-        # Remove URLs
         text = re.sub(r'http\S+', '', text)
         
-        # Collapse whitespace
+        
         text = re.sub(r'\s+', ' ', text).strip()
         
         return text

@@ -2,8 +2,6 @@
 import asyncio
 from typing import Optional
 
-# Depending on your environment install:
-# pip install google-generativeai
 try:
     import google.generativeai as genai
 except Exception:
@@ -38,16 +36,16 @@ User Question: {prompt}"""
         loop = asyncio.get_event_loop()
         def _call():
             try:
-                # Use GenerativeModel API which exposes generate_content
+                
                 model_obj = genai.GenerativeModel(self.model)
                 resp = model_obj.generate_content(contents=[{"parts": [{"text": effective_prompt}]}], stream=False)
                 
-                # Check for safety ratings or other blocks if text is not available
+                # Checking for safety ratings or other blocks if text is not available
                 try:
                     if resp.text:
                         return resp.text
                 except ValueError:
-                    # This usually happens if the response was blocked by safety filters
+                    
                     print(f"Response blocked. Safety ratings: {resp.prompt_feedback}")
                     return "I cannot answer this question because it violates safety policies."
                 
@@ -78,7 +76,7 @@ User Question: {prompt}"""
                 print(f"STT via Gemini failed: {e}")
             
             # Fallback: return a default message indicating audio was received
-            # In production, integrate Google Cloud Speech-to-Text API
+            #  integrate Google Cloud Speech-to-Text API
             print(f"Warning: Could not transcribe audio ({len(audio_bytes)} bytes). Using fallback.")
             return "[Audio received but transcription not available - please use text mode]"
         
