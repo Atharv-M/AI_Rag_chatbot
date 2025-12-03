@@ -2,6 +2,8 @@
 
 Genova Gemini is a powerful, interactive chatbot application built with Streamlit. It leverages Google's Gemini Pro LLM and Retrieval-Augmented Generation (RAG) to provide accurate, context-aware responses based on your uploaded documents. The application also features robust voice interaction capabilities.
 
+🚀 **Live Demo:** [Try the App](https://ai-rag-chatbot-tts.streamlit.app/)
+
 ## 🌟 Features
 
 -   **🧠 Advanced LLM**: Powered by Google's **Gemini Pro** for high-quality text generation.
